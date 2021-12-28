@@ -29,21 +29,25 @@ limit = 1
 
 previous_txn_id = ""
 try:
+    print("Getting first transaction")
     r = indexer_client.search_transactions_by_address(address=account_address, limit=limit, txn_type=txn_type)
     txn = r['transactions'][0]
     previous_txn_id = txn['id']
+    print("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
 except:
     print("Initial transaction request failed")
 
 while not exit:
+    print("Waiting 30Mins before checking for new transaction")
     time.sleep(30*60)
     try:
+        print("Requesting new transaction info")
         r = indexer_client.search_transactions_by_address(address=account_address, limit=limit, txn_type=txn_type)
         txn = r['transactions'][0]
         if previous_txn_id != txn['id']:
             transactions = r['transactions'][0]
             asset_transfer_txn = transactions['asset-transfer-transaction']
-            if asset_transfer_txn["amount"] > 100:# and asset_transfer_txn["asset-id"] not algoID?:
+            if asset_transfer_txn["amount"] > 0:# and asset_transfer_txn["asset-id"] not algoID?:
                 if asset_transfer_txn["receiver"] == account_address:
                     SendNotificationMail()
             print("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
