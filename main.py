@@ -3,15 +3,17 @@ import yagmail
 import json
 import time
 
-def SendNotificationMail():
+def SendNotificationMail(subject, contents):
     try:
         #initializing the server connection
         yag = yagmail.SMTP(user='ctyieldlydevtest@gmail.com', password='5@ZCScZ0ssE0')
         #sending the email
-        yag.send(to='cstummon@hotmail.com', subject='Yieldly Account change', contents='Hurray, it worked!')
+        yag.send(to='cstummon@hotmail.com', subject=subject, contents=contents)
         print("Email sent successfully")
     except:
         print("Error, email was not sent")
+
+SendNotificationMail("Algotracker Restarted", "")
 
 exit = False
 #.idx_test_address = "https://testnet-algorand.api.purestake.io/idx2"
@@ -49,7 +51,7 @@ while not exit:
             asset_transfer_txn = transactions['asset-transfer-transaction']
             if asset_transfer_txn["amount"] > 0:# and asset_transfer_txn["asset-id"] not algoID?:
                 if asset_transfer_txn["receiver"] == account_address:
-                    SendNotificationMail()
+                    SendNotificationMail('Yieldly Account change', 'New transaction')
             print("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
     except:
         print("Error parsing response.")
