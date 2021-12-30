@@ -1,57 +1,67 @@
-from algosdk.v2client import indexer
+#from algosdk.v2client import indexer
 import yagmail
 import json
 import time
+import requests
+import logging
+from logging.handlers import RotatingFileHandler
+
+LOG_FILENAME = 'AlgoTracker.log'
+logger = logging.getLogger("RotatingLog")
+
+def setupLogger():
+    logger.setLevel(logging.DEBUG)
+    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=1024*1024*20,
+                                  backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+def getTransactionAlgoExplorer(address, txn_type, limit):
+    r = requests.get('https://algoindexer.algoexplorerapi.io/v2/transactions?limit='+limit+'&tx-type='+txn_type+'&address='+address)
+    return r.json()
 
 def SendNotificationMail(subject, contents):
     try:
-        #initializing the server connection
         yag = yagmail.SMTP(user='ctyieldlydevtest@gmail.com', password='5@ZCScZ0ssE0')
-        #sending the email
         yag.send(to='cstummon@hotmail.com', subject=subject, contents=contents)
-        print("Email sent successfully")
+        logger.info("Email sent successfully")
     except:
-        print("Error, email was not sent")
+        logger.warning("Error, email was not sent")
 
+setupLogger()
+logger.info("Starting AlgoTracker")
 SendNotificationMail("Algotracker Restarted", "")
 
-exit = False
-#.idx_test_address = "https://testnet-algorand.api.purestake.io/idx2"
-idx_main_address = "https://mainnet-algorand.api.purestake.io/idx2"
-
-headers = {
-   "X-API-Key": "ooglawu5Wm3nCvIuFzQLAaKzTswaNAwJkjJC24Ce",
-}
-
-indexer_client = indexer.IndexerClient("", idx_main_address, headers)
-
 txn_type = "axfer" #asset transfer
-account_address = 'GIUGZKIDGW2DFRL4OLBCU7NNJQPAYCVDMAIQCG757JE75KAMZ3Y22LDWZI'
-limit = 1
+account_address = "GIUGZKIDGW2DFRL4OLBCU7NNJQPAYCVDMAIQCG757JE75KAMZ3Y22LDWZI"
+limit = "1"
 
 previous_txn_id = ""
 try:
-    print("Getting first transaction")
-    r = indexer_client.search_transactions_by_address(address=account_address, limit=limit, txn_type=txn_type)
+    logger.info("Getting first transaction")
+    r = getTransactionAlgoExplorer(account_address, txn_type, limit)
     txn = r['transactions'][0]
     previous_txn_id = txn['id']
-    print("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
+    logger.info("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
 except:
-    print("Initial transaction request failed")
+    logger.warning("Initial transaction request failed")
 
+exit = False
 while not exit:
-    print("Waiting 30Mins before checking for new transaction")
+    logger.info("Waiting 30Mins before checking for new transaction")
     time.sleep(30*60)
     try:
-        print("Requesting new transaction info")
-        r = indexer_client.search_transactions_by_address(address=account_address, limit=limit, txn_type=txn_type)
+        logger.info("Requesting new transaction info")
+        r = getTransactionAlgoExplorer(account_address, txn_type, limit)
         txn = r['transactions'][0]
         if previous_txn_id != txn['id']:
+            previous_txn_id = txn['id']
             transactions = r['transactions'][0]
             asset_transfer_txn = transactions['asset-transfer-transaction']
-            if asset_transfer_txn["amount"] > 0:# and asset_transfer_txn["asset-id"] not algoID?:
-                if asset_transfer_txn["receiver"] == account_address:
-                    SendNotificationMail('Yieldly Account change', 'New transaction')
-            print("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
+            if asset_transfer_txn["receiver"] == account_address:
+                SendNotificationMail('Yieldly Account change', 'New transaction')
+            logger.info("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
     except:
-        print("Error parsing response.")
+        logger.warning("Error parsing response.")
