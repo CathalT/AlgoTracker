@@ -1,4 +1,3 @@
-#from algosdk.v2client import indexer
 import yagmail
 import json
 import time
@@ -45,7 +44,7 @@ try:
     txn = r['transactions'][0]
     previous_txn_id = txn['id']
     logger.info("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
-except:
+except Exception:
     logger.warning("Initial transaction request failed")
 
 exit = False
@@ -56,10 +55,11 @@ while not exit:
         logger.info("Requesting new transaction info")
         r = getTransactionAlgoExplorer(account_address, txn_type, limit)
         txn = r['transactions'][0]
-        if previous_txn_id != txn['id']:
-            previous_txn_id = txn['id']
-            transactions = r['transactions'][0]
-            asset_transfer_txn = transactions['asset-transfer-transaction']
+        new_id = txn['id']
+        if previous_txn_id != new_id:
+            logger.info("PreviousId: " + previous_txn_id + " , NewId: " + new_id)
+            previous_txn_id = new_id
+            asset_transfer_txn = txn['asset-transfer-transaction']
             if asset_transfer_txn["receiver"] == account_address:
                 SendNotificationMail('Yieldly Account change', 'New transaction')
             logger.info("Transaction search: " + json.dumps(r, indent=2, sort_keys=True))
