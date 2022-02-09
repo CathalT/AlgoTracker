@@ -35,7 +35,7 @@ def getEmailCreds():
         
 def SendNotificationMail(subject, contents):
     try:
-        yag = yagmail.SMTP(user='ctyieldlydevtest@gmail.com', password='5@ZCScZ0ssE0')
+        yag = yagmail.SMTP(user=email, password=emailPassword)
         yag.send(to='cstummon@hotmail.com', subject=subject, contents=contents)
         logger.info("Email sent successfully")
     except:
