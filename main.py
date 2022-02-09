@@ -7,6 +7,8 @@ from logging.handlers import RotatingFileHandler
 
 LOG_FILENAME = 'AlgoTracker.log'
 logger = logging.getLogger("RotatingLog")
+email = ""
+emailPassword = ""
 
 def setupLogger():
     logger.setLevel(logging.DEBUG)
@@ -21,6 +23,16 @@ def getTransactionAlgoExplorer(address, txn_type, limit):
     r = requests.get('https://algoindexer.algoexplorerapi.io/v2/transactions?limit='+limit+'&tx-type='+txn_type+'&address='+address)
     return r.json()
 
+def getEmailCreds():
+    try:
+        creds = open('EmailCreds.txt', 'r')
+        global email
+        global emailPassword
+        email = creds.readline().strip()
+        emailPassword = creds.readline().strip()
+    except FileNotFoundError:
+        logging.getLogger().warning('No EmailCreds.txt found.')
+        
 def SendNotificationMail(subject, contents):
     try:
         yag = yagmail.SMTP(user='ctyieldlydevtest@gmail.com', password='5@ZCScZ0ssE0')
@@ -31,6 +43,7 @@ def SendNotificationMail(subject, contents):
 
 setupLogger()
 logger.info("Starting AlgoTracker")
+getEmailCreds()
 SendNotificationMail("Algotracker Restarted", "")
 
 txn_type = "axfer" #asset transfer
